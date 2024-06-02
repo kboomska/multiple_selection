@@ -20,38 +20,58 @@ class _HomePageState extends State<HomePage> {
   List<ItemModel> get selectedItems =>
       items.where((item) => item.isSelected).toList();
 
+  bool get isAnySelected => selectedItems.isNotEmpty;
+
+  final allSelectedNotifier = ValueNotifier<bool>(false);
+
+  final anySelectedNotifier = ValueNotifier<bool>(false);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Multiple Selection Demo'),
         actions: [
-          IconButton(
-            onPressed: () {
-              if (isAllSelected) {
-                for (ItemModel item in items) {
-                  item.isSelected = false;
-                }
-              } else {
-                for (ItemModel item in items) {
-                  item.isSelected = true;
-                }
-              }
-            },
-            icon: const Icon(Icons.select_all),
-          ),
-          IconButton(
-            onPressed: () {
-              print('Is all items selected: $isAllSelected');
-              print('List of selected items: $selectedItems');
+          ValueListenableBuilder<bool>(
+            valueListenable: anySelectedNotifier,
+            builder: (context, value, child) {
+              return value
+                  ? IconButton(
+                      onPressed: () {
+                        print('Is all items selected: $isAllSelected');
+                        print('List of selected items: $selectedItems');
 
-              for (ItemModel item in selectedItems) {
-                if (item.isSelected) {
-                  item.title = 'Changed Item';
-                }
-              }
+                        for (ItemModel item in selectedItems) {
+                          if (item.isSelected) {
+                            item.title = 'Changed Item';
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.settings),
+                    )
+                  : const SizedBox.shrink();
             },
-            icon: const Icon(Icons.settings),
+          ),
+          ValueListenableBuilder<bool>(
+            valueListenable: allSelectedNotifier,
+            builder: (context, value, child) {
+              return IconButton(
+                onPressed: () {
+                  if (isAllSelected) {
+                    for (ItemModel item in items) {
+                      item.isSelected = false;
+                    }
+                  } else {
+                    for (ItemModel item in items) {
+                      item.isSelected = true;
+                    }
+                  }
+                  allSelectedNotifier.value = isAllSelected;
+                  anySelectedNotifier.value = isAnySelected;
+                },
+                icon: Icon(value ? Icons.deselect : Icons.select_all),
+              );
+            },
           ),
         ],
       ),
@@ -63,6 +83,8 @@ class _HomePageState extends State<HomePage> {
             child: ItemWidget(
               onSelected: (value) {
                 print('$index: $value');
+                allSelectedNotifier.value = isAllSelected;
+                anySelectedNotifier.value = isAnySelected;
               },
             ),
           );
