@@ -9,13 +9,16 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   /// Список всех итемов.
-  List<ItemModel> items = List.generate(4, (_) => ItemModel());
+  List<ItemModel> items = List.generate(4, (index) => ItemModel(index: index));
 
   /// Все ли итемы выбраны.
   bool get isAllSelected => items.fold(
         true,
         (previousValue, item) => item.isSelected && previousValue,
       );
+
+  List<ItemModel> get selectedItems =>
+      items.where((item) => item.isSelected).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +42,14 @@ class _HomePageState extends State<HomePage> {
           ),
           IconButton(
             onPressed: () {
-              print(isAllSelected);
+              print('Is all items selected: $isAllSelected');
+              print('List of selected items: $selectedItems');
+
+              for (ItemModel item in selectedItems) {
+                if (item.isSelected) {
+                  item.title = 'Changed Item';
+                }
+              }
             },
             icon: const Icon(Icons.settings),
           ),
@@ -51,7 +61,6 @@ class _HomePageState extends State<HomePage> {
           return ItemModelProvider(
             model: items[index],
             child: ItemWidget(
-              index: index,
               onSelected: (value) {
                 print('$index: $value');
               },
@@ -64,14 +73,29 @@ class _HomePageState extends State<HomePage> {
 }
 
 class ItemModel extends ChangeNotifier {
-  final _isSelected = ValueNotifier(false);
+  final int index;
+
+  bool _isSelected = false;
+  String _title = 'Item';
+
+  ItemModel({required this.index});
 
   set isSelected(bool value) {
-    _isSelected.value = value;
+    _isSelected = value;
     notifyListeners();
   }
 
-  bool get isSelected => _isSelected.value;
+  set title(String value) {
+    _title = value;
+    notifyListeners();
+  }
+
+  bool get isSelected => _isSelected;
+
+  String get title => _title;
+
+  @override
+  String toString() => '$title #$index';
 }
 
 class ItemModelProvider extends InheritedNotifier<ItemModel> {
@@ -100,11 +124,8 @@ class ItemModelProvider extends InheritedNotifier<ItemModel> {
 class ItemWidget extends StatelessWidget {
   const ItemWidget({
     super.key,
-    required this.index,
     required this.onSelected,
   });
-
-  final int index;
 
   final void Function(bool value) onSelected;
 
@@ -114,7 +135,7 @@ class ItemWidget extends StatelessWidget {
 
     return Card(
       child: ListTile(
-        title: Text('Item #$index'),
+        title: Text('$item'),
         trailing: Checkbox(
           value: item.isSelected,
           onChanged: (value) {
